@@ -1,0 +1,64 @@
+{
+    // Useful breakpoints:
+    // * UBSAN errors: __ubsan::ScopedReport::~ScopedReport
+    // * ASAN errors: __asan_report_error
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug with LLDB (dap)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceRoot}/<EXECUTABLE>",
+            "args": [/*<ARGS_ARR>*/],
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "Build",
+            "initCommands": [
+                // Enable printing of the `phmap` hashmaps. The path needs to be updated when the library is updated.
+                // "command script import ${workspaceRoot}/build/deps/phmap-88123934b46b77c3b6d80167382734cbff6eff74/source/phmap_lldb.py",
+            ],
+            "env": [/*<ENV_JSON_ARR>*/],
+            "enableAutoVariableSummaries": true,
+            "enableSyntheticChildDebugging": true
+            // "disableASLR": false, // For debugging in docker.
+        },
+        {
+            "name": "Debug with LLDB (code-lldb)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/<EXECUTABLE>",
+            "args": "<ARGS>",
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "Build",
+            "initCommands": [
+                // Enable printing of the `phmap` hashmaps. The path needs to be updated when the library is updated.
+                "command script import build/deps/phmap-88123934b46b77c3b6d80167382734cbff6eff74/source/phmap_lldb.py",
+            ],
+            "env": {/*<ENV_JSON_DICT>*/},
+        },
+        {
+            "name": "Debug with GDB",
+            "type": "gdb",
+            "request": "launch",
+            "target": "${workspaceRoot}/<EXECUTABLE>",
+            "arguments": "<ARGS>",
+            // The `"terminal": ""` part creates a separate terminal on Windows. We need it to be able to Ctrl+C it to update the breakpoints after placing them.
+            // On Linux breakpoints work properly without this trick. And also, on Linux it causes a new terminal to spawn each time you debug, which is bad, so we don't use it.
+            "windows": {"terminal": ""},
+            "cwd": "${workspaceRoot}",
+            "valuesFormatting": "prettyPrinters",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "Build",
+            "autorun": [
+                // Catch exceptions by default.
+                "catch throw",
+                // Register pretty-printers.
+                // Normally they are auto-loaded, but it doesn't work when libstdc++'s `.so` is in a non-default path.
+                // Following force-loads the printers. We automatically glob the path for the newest installed GCC, but you could also hardcode the path.
+                "python import glob; import sys; sys.path.insert(0, max(glob.glob('/usr/share/gcc*/python'))); from libstdcxx.v6.printers import register_libstdcxx_printers; register_libstdcxx_printers(None)",
+            ],
+            "env": {/*<ENV_JSON_DICT>*/},
+        },
+    ]
+}

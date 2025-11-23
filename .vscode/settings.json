@@ -1,0 +1,12 @@
+{
+    "files.exclude": {
+        ".cache/": true,
+        "deps_src/": true,
+        "build/deps/": true,
+        "build/obj/": true,
+    },
+
+    "files.readonlyInclude": {
+        "build/deps/**/prefix/include/**": true
+    },
+}

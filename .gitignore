@@ -1,0 +1,20 @@
+/.cache/**
+/build/**
+/deps/archives/**
+
+*.tar.gz
+*.tar.zst
+*.zip
+
+/.vscode/launch.json
+
+/local_config.mk
+
+/compile_commands.json
+gmon.out
+imgui.ini
+
+# Valgrind dumps.
+vgcore.*
+
+/android
