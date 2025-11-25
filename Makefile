@@ -360,6 +360,9 @@ endif
 PREFIX_exe :=
 PREFIX_shared := lib
 PREFIX_static := lib
+SECONDARY_EXTS_exe :=
+SECONDARY_EXTS_shared :=
+SECONDARY_EXTS_static :=
 ifeq ($(TARGET_OS),windows)
 EXT_exe := .exe
 EXT_shared := .dll
@@ -368,6 +371,7 @@ else ifeq ($(TARGET_OS),emscripten)
 EXT_exe := .html
 EXT_shared := .so
 EXT_static := .a
+SECONDARY_EXTS_exe := .data .wasm .js# Those are the additional files that are emitted along with the executable.
 else
 EXT_exe :=
 EXT_shared := .so
@@ -1028,8 +1032,11 @@ override pch_flag_for_source_low = $(if $1,-include$(patsubst %.gch,%,$1))
 # The first resulting element will always be the main output.
 override source_files_to_output_list = $(call source_files_to_main_outputs,$1,$2) $(call source_files_to_dep_outputs,$1,$2)
 
-# Given a list of projects $1, returns the link results they produce.
+# Given a list of projects $1, returns the primary link results they produce, one file per project.
 override proj_output_filename = $(foreach x,$1,$(BIN_DIR)/$(os_mode_string)/$(PREFIX_$(__proj_kind_$x))$x$(EXT_$(__proj_kind_$x)))
+
+# Given a list of projects $1, returns the additional link results they produce.
+override proj_secondary_output_filenames = $(foreach x,$1,$(addprefix $(BIN_DIR)/$(os_mode_string)/$(PREFIX_$(__proj_kind_$x))$x,$(SECONDARY_EXTS_$(__proj_kind_$x))))
 
 # Given a list of projects $1, recursively finds all their library dependencies. Recurses both into projects and libraries.
 override proj_recursive_lib_deps = $(sort $(call proj_recursive_lib_deps_low_lib,$(sort $(foreach x,$(sort $(call proj_recursive_lib_deps_low_proj,$1)),$(__projsetting_libs_$x)))))
@@ -1292,7 +1299,7 @@ remember:
 #   This shouldn't affect us, as we usually only copy directories.
 override copy_assets_and_libs_to = \
 	$(call var,__lib_deps := $(strip $(foreach x,$(foreach x,$(call proj_recursive_lib_deps,$(proj_list)),$(wildcard $(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/$(SHARED_LIB_DIR_IN_PREFIX)/*)),$(if $(call IS_SHARED_LIB_FILENAME,$x),$x))))\
-	$(call safe_shell_exec,rsync -Lrt --delete $(foreach x,$(ASSETS_IGNORED_PATTERNS),--exclude $x) $(foreach x,$(proj_list),--exclude $(call quote,/$(notdir $(call proj_output_filename,$x)))) $(foreach x,$(__lib_deps),--exclude $(call quote,/$(notdir $x))) $(ASSETS) $(call quote,$1))\
+	$(call safe_shell_exec,rsync -Lrt --delete $(foreach x,$(ASSETS_IGNORED_PATTERNS),--exclude $(call quote,$x)) $(foreach x,$(proj_list),$(foreach y,$(call proj_output_filename,$x) $(call proj_secondary_output_filenames,$x),--exclude $(call quote,/$(notdir $y)))) $(foreach x,$(__lib_deps),--exclude $(call quote,/$(notdir $x))) $(ASSETS) $(call quote,$1))\
 	$(if $2,$(foreach x,$(__lib_deps),$(if $(strip $(call safe_shell,cp -duv $(call quote,$x) $(call quote,$1))),$(info [Copy library] $(notdir $x))$(if $(PATCHELF),$(if $(filter 0,$(call shell_status,test ! -L $(call quote,$1/$(notdir $x)))),$(call safe_shell_exec,$(PATCHELF) $(call quote,$1/$(notdir $x))))))))
 
 # Copies libraries and `ASSETS` to the current bin directory, ignoring any files matching `ASSETS_IGNORED_PATTERNS`.

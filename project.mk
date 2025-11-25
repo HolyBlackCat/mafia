@@ -34,6 +34,7 @@ endif
 
 ifeq ($(TARGET_OS),emscripten)
 GLOBAL_LDFLAGS += -sASYNCIFY
+ASSETS_IGNORED_PATTERNS := *# A temporary hack to avoid copying assets into the output directory.
 endif
 
 # --- Project config ---
