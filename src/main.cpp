@@ -74,6 +74,8 @@ SDL_AppResult SDLCALL SDL_AppInit(void **appstate, int argc, char *argv[])
 
     #ifdef __EMSCRIPTEN__
     io.Fonts->AddFontFromFileTTF("assets/NotoSans.ttf");
+    #else
+    io.Fonts->AddFontFromFileTTF((std::string(SDL_GetBasePath()) + "NotoSans.ttf").c_str());
     #endif
 
     // Main loop
@@ -93,6 +95,10 @@ SDL_AppResult SDLCALL SDL_AppIterate(void *appstate)
     (void)appstate;
     if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED)
         redraw_frames = 0;
+    else if (ImGui::IsAnyItemActive())
+        redraw_frames = default_redraw_frames; // For the blinking cursor and such.
+    else if (ImGui::IsPopupOpen(0, ImGuiPopupFlags_AnyPopup))
+        redraw_frames = default_redraw_frames; // For the popup animation.
 
     if (redraw_frames > 0)
     {
@@ -100,11 +106,6 @@ SDL_AppResult SDLCALL SDL_AppIterate(void *appstate)
     }
     else
     {
-        #ifdef __EMSCRIPTEN__
-        emscripten_sleep(10);
-        #else
-        SDL_Delay(10);
-        #endif
         return SDL_APP_CONTINUE;
     }
 
