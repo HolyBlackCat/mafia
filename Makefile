@@ -338,7 +338,7 @@ override Mode = $(if $(strip $(filter-out $(lastword $(mode_list)),$(MODE))),ove
 
 # Detect target OS.
 ifeq ($(TARGET_OS),)
-ifneq ($(EMSCRIPTEN),)# Emmake sets this.
+ifneq ($(EMSCRIPTEN),)# `emmake` sets this. But you can also pass `TARGET_OS=emscripten` manually.
 TARGET_OS := emscripten
 else ifeq ($(OS),Windows_NT)# Quasi-MSYS2 sets this.
 TARGET_OS := windows

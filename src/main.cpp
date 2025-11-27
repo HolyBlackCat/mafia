@@ -33,6 +33,9 @@ SDL_AppResult SDLCALL SDL_AppInit(void **appstate, int argc, char *argv[])
     (void)argc;
     (void)argv;
 
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Title", "Hello!", nullptr);
+    return SDL_APP_SUCCESS;
+
     // Setup SDL
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
         throw std::runtime_error(std::string("`SDL_Init` failed: ") + SDL_GetError());
@@ -158,11 +161,11 @@ void SDLCALL SDL_AppQuit(void *appstate, SDL_AppResult result)
     (void)appstate;
     (void)result;
 
-    ImGui_ImplSDLRenderer3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
+    // ImGui_ImplSDLRenderer3_Shutdown();
+    // ImGui_ImplSDL3_Shutdown();
+    // ImGui::DestroyContext();
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    // SDL_DestroyRenderer(renderer);
+    // SDL_DestroyWindow(window);
+    // SDL_Quit();
 }
