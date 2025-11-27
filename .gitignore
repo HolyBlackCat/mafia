@@ -17,4 +17,4 @@ imgui.ini
 # Valgrind dumps.
 vgcore.*
 
-/android
+.android_keystore.jks

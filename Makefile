@@ -360,22 +360,26 @@ endif
 PREFIX_exe :=
 PREFIX_shared := lib
 PREFIX_static := lib
+EXT_exe :=
+EXT_shared := .so
+EXT_static := .a
+EXTFLAGS_exe :=
+EXTFLAGS_shared := -shared
+# No `EXTFLAGS_static`, as it's not linked via `$(CXX)`.
 SECONDARY_EXTS_exe :=
 SECONDARY_EXTS_shared :=
 SECONDARY_EXTS_static :=
 ifeq ($(TARGET_OS),windows)
 EXT_exe := .exe
 EXT_shared := .dll
-EXT_static := .a
 else ifeq ($(TARGET_OS),emscripten)
 EXT_exe := .html
-EXT_shared := .so
-EXT_static := .a
 SECONDARY_EXTS_exe := .data .wasm .js# Those are the additional files that are emitted along with the executable.
-else
-EXT_exe :=
-EXT_shared := .so
-EXT_static := .a
+else ifneq ($(filter android-%,$(TARGET_OS)),)
+# For Android, must compile as shared library.
+EXT_exe := .so
+PREFIX_exe := lib
+EXTFLAGS_exe := -shared
 endif
 ifeq ($(HOST_OS),windows)
 HOST_EXT_exe := .exe
@@ -450,18 +454,19 @@ MODE :=# Build mode. Set to `generic` to not add any custom flags.
 APP :=# Target project
 ARGS :=# Flags for running the application.
 
-COMMON_FLAGS :=# Used both when compiling and linking.
 LINKER := lld
 ALLOW_PCH := 1# If 0 or empty, disable PCH.
 CMAKE_GENERATOR := Ninja# CMake generator, not quoted. Optional.
 CMAKE_BUILD_TOOL := ninja# CMake build tool, such as `make` or `ninja`. Optional. If specified, must match the generator.
+CMAKE_EXTRA_FLAGS :=# Those flags are added when building dependencies with CMake.
 
 # Used both when compiling and linking. Those are set automatically.
 IMPLICIT_COMMON_FLAGS :=
 ifneq ($(TARGET_OS),windows)
 # Without this we can't build shared libraries.
 # Also libfmt is known to produce static libs without this flag, meaning they can't later be linked into our shared libs.
-IMPLICIT_COMMON_FLAGS += -fPIC
+# I'm using `-fpic` instead of `-fPIC` on Android ARM (v7 and v8) because this article does so: https://www.hanshq.net/command-line-android.html
+IMPLICIT_COMMON_FLAGS += $(if $(filter android-arm%,$(TARGET_OS)),-fpic,-fPIC)
 endif
 ifneq ($(MAKE_TERMERR),)
 # -Otarget messes with the colors, so we fix it here.
@@ -1116,7 +1121,7 @@ build-$(__proj): $(__filename) sync-libs-and-assets $(COMMANDS_FILE)
 $(__filename): override __proj := $(__proj)
 $(__filename): $(call source_files_to_main_outputs,$(__proj_allsources_$(__proj)),$(__proj)) $(call proj_output_filename,$(__projsetting_deps_$(__proj))) $(__projsetting_linking_depends_on_$(__proj))
 	$(call log_now,[$(proj_kind_name-$(__proj_kind_$(__proj)))] $@)
-	@$(language_link-$(__projsetting_lang_$(__proj))) $(if $(filter shared,$(__proj_kind_$(__proj))),-shared) -o $@ $(filter %.o,$^) \
+	@$(language_link-$(__projsetting_lang_$(__proj))) $(EXTFLAGS_$(__proj_kind_$(__proj))) -o $@ $(filter %.o,$^) \
 		$(call proj_libs_filtered_flags,ldflags,$(__proj)) \
 		$(combined_global_ldflags) $(PROJ_COMMON_FLAGS) $(PROJ_LDFLAGS) $(__projsetting_common_flags_$(__proj)) $(__projsetting_ldflags_$(__proj)) \
 		-L$(call quote,$(BIN_DIR)/$(os_mode_string)) $(patsubst $(PREFIX_shared)%$(EXT_shared),-l%,$(notdir $(call proj_output_filename,$(__projsetting_deps_$(__proj)))))
@@ -1528,6 +1533,7 @@ override buildsystem-cmake = \
 		$(call, ### Temporarily disable modules until I figure out how to run clang-scan-deps in quasi-msys2.)\
 		-DCMAKE_CXX_SCAN_FOR_MODULES=OFF\
 		$(if $(CMAKE_GENERATOR),$(call quote,-G$(CMAKE_GENERATOR)))\
+		$(CMAKE_EXTRA_FLAGS)\
 		$(__libsetting_cmake_flags_$(__lib_name))\
 		>>$(call quote,$(__log_path))\
 	)\
