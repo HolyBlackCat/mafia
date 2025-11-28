@@ -79,15 +79,15 @@ $(call Library,imgui,https://github.com/ocornut/imgui/archive/refs/tags/v1.92.5.
 override buildsystem-imgui = \
 	$(call log_now,[Library] >>> Copying files...)\
 	$(call safe_shell_exec,mkdir $(call quote,$(__install_dir)/include) $(call quote,$(__install_dir)/lib))\
+	$(call var,__bs_sources :=)\
 	$(foreach x,./* misc/cpp/* backends/imgui_impl_sdl3 backends/imgui_impl_sdlrenderer3,\
 		$(call safe_shell_exec,cp $(call quote,$(__source_dir))/$x.h $(call quote,$(__install_dir)/include/))\
-		$(call safe_shell_exec,cp $(call quote,$(__source_dir))/$x.cpp $(call quote,$(__build_dir)))\
+		$(call var,__bs_sources := $(__bs_sources) $(wildcard $(__source_dir)/$x.cpp))\
 	) \
 	$(call, ### Build a static library)\
 	$(call log_now,[Library] >>> Building...)\
-	$(call var,__bs_sources := $(wildcard $(__build_dir)/*.cpp))\
 	$(foreach x,$(__bs_sources),\
-		$(call safe_shell_exec,$(call language_command-cpp,$x,$(x:.cpp=.o),,\
+		$(call safe_shell_exec,$(call language_command-cpp,$x,$(__build_dir)/$(notdir $(x:.cpp=.o)),,\
 			-I$(call quote,$(__build_dir))\
 			-I$(call quote,$(__install_dir)/include)\
 			$(call, ### Add flags for libfmt, freetype, and other deps. See above for explanation.)\
@@ -95,4 +95,4 @@ override buildsystem-imgui = \
 			>>$(call quote,$(__log_path))\
 		))\
 	)\
-	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)imgui$(EXT_static),$(__bs_sources:.cpp=.o)) >>$(call quote,$(__log_path)))\
+	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)imgui$(EXT_static),$(foreach x,$(__bs_sources),$(__build_dir)/$(notdir $(x:.cpp=.o)))) >>$(call quote,$(__log_path)))\

@@ -4,9 +4,11 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
+#include <SDL3/SDL_system.h>
+
 #include <algorithm>
 #include <array>
-#include <numeric>
+#include <iostream>
 #include <utility>
 #include <vector>
 

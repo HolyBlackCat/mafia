@@ -32,6 +32,7 @@
 # Copy directory `SDL/android-project/app/src/main/res/` to e.g. `src/android_res`.
 # In `src/android_res/values/strings.xml`, set your app name, replacing `Game`.
 # You might also want to replace the icons and some default colors in `src/values/colors.xml`.
+# You get one assets directory for custom files, see `ANDROID_ASSETS_DIR` below. Must load it using `SDL_IOStream`.
 
 # Those must match your tooling installation from above:
 ANDROID_SDK := ~/.android_tools/sdk
@@ -62,8 +63,10 @@ endif
 # Customize those for your app:
 ANDROID_PACKAGE := com.holyblackcat.mafia
 ANDROID_ACTIVITY := MafiaActivity
-# The input resource directory.
+# The input resource directory. Icons and some system XMLs go here.
 ANDROID_RES_DIR := src/android_res
+# Custom assets go here.
+ANDROID_ASSETS_DIR := assets
 
 # Output directory.
 ANDROID_BUILD_DIR := build/android
@@ -159,7 +162,7 @@ $(ANDROID_MANIFEST): $(ANDROID_ORIGINAL_MANIFEST)
 # Note the `getLibraries()` override. It must return the string that matches your main library name, minus the `lib` prefix and `.so` suffix.
 # It seems you don't need to list your dependencies here.
 ANDROID_ACTIVITY_SRC := $(ANDROID_GENERATED_SRC_DIR)/$(ANDROID_ACTIVITY).java
-$(ANDROID_ACTIVITY_SRC): $(ANDROID_BUILD_DIR)/markers/native-$(word 1,$(subst |, ,$(firstword $(ANDROID_ABIS)))).txt
+$(ANDROID_ACTIVITY_SRC):
 	mkdir -p $(dir $@)
 	echo >$(call quote,$@) 'package $(ANDROID_PACKAGE);'
 	echo >>$(call quote,$@) 'import org.libsdl.app.SDLActivity;'
@@ -172,7 +175,7 @@ $(ANDROID_ACTIVITY_SRC): $(ANDROID_BUILD_DIR)/markers/native-$(word 1,$(subst |,
 ANDROID_GENERATED_RESOURCES := $(ANDROID_GENERATED_SRC_DIR)/R.java
 $(ANDROID_GENERATED_RESOURCES): $(ANDROID_MANIFEST)
 	mkdir -p $(dir $@)
-	$(ANDROID_SDK)/build-tools/$(ANDROID_BUILD_TOOLS)/aapt package -f -J $(dir $@) -S $(ANDROID_RES_DIR) -M $(ANDROID_MANIFEST) -I $(ANDROID_SDK)/platforms/android-$(ANDROID_PLATFORM)/android.jar
+	$(ANDROID_SDK)/build-tools/$(ANDROID_BUILD_TOOLS)/aapt package -f -J $(dir $@) -S $(ANDROID_RES_DIR) $(if $(ANDROID_ASSETS_DIR),-A $(ANDROID_ASSETS_DIR)) -M $(ANDROID_MANIFEST) -I $(ANDROID_SDK)/platforms/android-$(ANDROID_PLATFORM)/android.jar
 
 # Compile Java code. This needs JDK to be installed, see above.
 ANDROID_COMPILED_JAVA_DIR := $(ANDROID_BUILD_DIR)/obj
@@ -194,7 +197,7 @@ $(ANDROID_COMPILED_DEX): $(ANDROID_COMPILED_JAVA_MARKER)
 ANDROID_APK_UNSIGNED := $(ANDROID_BUILD_DIR)/unfinished_apks/$(ANDROID_PACKAGE).apk.unsigned
 $(ANDROID_APK_UNSIGNED): $(ANDROID_COMPILED_DEX) $(ANDROID_MANIFEST) $(android_all_native_markers)
 	mkdir -p $(dir $@)
-	$(ANDROID_SDK)/build-tools/$(ANDROID_BUILD_TOOLS)/aapt package -f -M $(ANDROID_MANIFEST) -S $(ANDROID_RES_DIR) -I $(ANDROID_SDK)/platforms/android-$(ANDROID_PLATFORM)/android.jar -F $@ $(dir $(ANDROID_COMPILED_DEX))
+	$(ANDROID_SDK)/build-tools/$(ANDROID_BUILD_TOOLS)/aapt package -f -M $(ANDROID_MANIFEST) $(if $(ANDROID_ASSETS_DIR),-A $(ANDROID_ASSETS_DIR)) -S $(ANDROID_RES_DIR) -I $(ANDROID_SDK)/platforms/android-$(ANDROID_PLATFORM)/android.jar -F $@ $(dir $(ANDROID_COMPILED_DEX))
 
 # Align some sections in the APK archive (apparently optional but recommended for performance).
 # The name is again entirely arbitrary.
