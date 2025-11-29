@@ -295,7 +295,7 @@ struct Game : BasicGame
 
             for (std::size_t i = 0; Player &pl : active_day.players)
             {
-                ImGui::BeginChild(("player_box:" + std::to_string(i)).c_str(), ImVec2(0, ImGui::GetTextLineHeight() * 2 + ImGui::GetStyle().FramePadding.y * 2), ImGuiChildFlags_FrameStyle, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                ImGui::BeginChild(("player_box:" + std::to_string(i)).c_str(), ImVec2(0, ImGui::GetTextLineHeight() * 2 + ImGui::GetStyle().FramePadding.y * 2), ImGuiChildFlags_FrameStyle, ImGuiWindowFlags_NoScrollbar);
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2());
                 ImGui::TextUnformatted(pl.name.c_str());

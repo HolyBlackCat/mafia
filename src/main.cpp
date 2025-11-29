@@ -133,10 +133,9 @@ struct TouchController
             {
                 auto ApplyScroll = [&](this auto &self, ImGuiWindow &win, bool y, float value) -> void
                 {
-                    win.Scroll[y] = value;
-
                     if (!(win.Flags & ImGuiWindowFlags_NoScrollWithMouse))
                     {
+                        win.Scroll[y] = value;
                         if (win.Scroll[y] < 0)
                             win.Scroll[y] = 0;
                         else if (win.Scroll[y] > win.ScrollMax[y])
