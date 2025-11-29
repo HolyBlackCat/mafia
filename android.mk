@@ -32,7 +32,8 @@
 # Copy directory `SDL/android-project/app/src/main/res/` to e.g. `src/android_res`.
 # In `src/android_res/values/strings.xml`, set your app name, replacing `Game`.
 # You might also want to replace the icons and some default colors in `src/values/colors.xml`.
-# You get one assets directory for custom files, see `ANDROID_ASSETS_DIR` below. Must load it using `SDL_IOStream`.
+# You get one assets directory for custom files, see `ANDROID_ASSETS_DIR` below. Must load those files using `SDL_IOStream`,
+#   using relative paths. (Don't add the directory name.) `SDL_GetBasePath()` returns `./` on Android.
 
 # Those must match your tooling installation from above:
 ANDROID_SDK := ~/.android_tools/sdk

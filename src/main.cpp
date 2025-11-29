@@ -131,18 +131,28 @@ struct TouchController
         {
             if (ImGuiWindow *win = ImGui::FindWindowByID(window_id))
             {
-                win->Scroll.x = mouse_pos_when_clicked.x - mouse_pos.x + window_scroll_when_clicked.x;
-                win->Scroll.y = mouse_pos_when_clicked.y - mouse_pos.y + window_scroll_when_clicked.y;
+                auto ApplyScroll = [&](this auto &self, ImGuiWindow &win, bool y, float value) -> void
+                {
+                    win.Scroll[y] = value;
 
-                if (win->Scroll.x < 0)
-                    win->Scroll.x = 0;
-                else if (win->Scroll.x > win->ScrollMax.x)
-                    win->Scroll.x = win->ScrollMax.x;
+                    if (!(win.Flags & ImGuiWindowFlags_NoScrollWithMouse))
+                    {
+                        if (win.Scroll[y] < 0)
+                            win.Scroll[y] = 0;
+                        else if (win.Scroll[y] > win.ScrollMax[y])
+                            win.Scroll[y] = win.ScrollMax[y];
+                    }
 
-                if (win->Scroll.y < 0)
-                    win->Scroll.y = 0;
-                else if (win->Scroll.y > win->ScrollMax.y)
-                    win->Scroll.y = win->ScrollMax.y;
+                    if (value != win.Scroll[y] && win.ParentWindow)
+                    {
+                        const float parent_scroll = win.ParentWindow->Scroll[y];
+                        self(*win.ParentWindow, y, win.ParentWindow->Scroll[y] + (value - win.Scroll[y]));
+                        window_scroll_when_clicked[y] += parent_scroll - win.ParentWindow->Scroll[y];
+                    }
+                };
+
+                for (bool y : {false, true})
+                    ApplyScroll(*win, y, mouse_pos_when_clicked[y] - mouse_pos[y] + window_scroll_when_clicked[y]);
             }
         }
 
@@ -343,7 +353,7 @@ SDL_AppResult SDLCALL SDL_AppInit(void **appstate, int argc, char *argv[])
     #ifdef __EMSCRIPTEN__
     window_flags |= SDL_WINDOW_FULLSCREEN;
     #endif
-    window = SDL_CreateWindow("Dear ImGui SDL3+SDL_Renderer example", (int)(1280 * main_scale), (int)(800 * main_scale), window_flags);
+    window = SDL_CreateWindow("Mafia", (int)(500 * main_scale), (int)(800 * main_scale), window_flags);
     if (!window)
         throw std::runtime_error(std::string("`SDL_CreateWindow` failed: ") + SDL_GetError());
 
@@ -458,7 +468,8 @@ SDL_AppResult SDLCALL SDL_AppEvent(void *appstate, SDL_Event *event)
         event->type == SDL_EVENT_KEY_UP ||
         event->type == SDL_EVENT_WINDOW_EXPOSED ||
         event->type == SDL_EVENT_WINDOW_RESIZED ||
-        event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
+        event->type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ||
+        event->type == SDL_EVENT_WILL_ENTER_FOREGROUND // Matters on android. Docs say it needs to be handled from an event watch, but here seems to work too.
     )
     {
         redraw_frames = default_redraw_frames;
