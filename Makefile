@@ -464,9 +464,8 @@ CMAKE_EXTRA_FLAGS :=# Those flags are added when building dependencies with CMak
 IMPLICIT_COMMON_FLAGS :=
 ifneq ($(TARGET_OS),windows)
 # Without this we can't build shared libraries.
-# Also libfmt is known to produce static libs without this flag, meaning they can't later be linked into our shared libs.
-# I'm using `-fpic` instead of `-fPIC` on Android ARM (v7 and v8) because this article does so: https://www.hanshq.net/command-line-android.html
-IMPLICIT_COMMON_FLAGS += $(if $(filter android-arm%,$(TARGET_OS)),-fpic,-fPIC)
+# Also without this libfmt is known to produce static libs that lack this flag, meaning they can't later be linked into our shared libs.
+IMPLICIT_COMMON_FLAGS += -fPIC
 endif
 ifneq ($(MAKE_TERMERR),)
 # -Otarget messes with the colors, so we fix it here.

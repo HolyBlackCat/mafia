@@ -1,5 +1,7 @@
 # ------ Android builds ------
 
+# This is partially based on: https://www.hanshq.net/command-line-android.html
+
 # --- Preparation:
 # install javac
 #     pacman -S jdk-openjdk
@@ -98,7 +100,7 @@ override rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(
 #         message(CMAKE_EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS})
 #         message(CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS})
 #         message(CMAKE_SYSROOT: ${CMAKE_SYSROOT})
-#         add_executable(Exe 1.cpp)
+#         add_library(Lib SHARED 1.cpp)
 #     Build with CMake flags used below in `CMAKE_EXTRA_FLAGS=...`.
 ANDROID_ABIS := \
 	armeabi-v7a|armv7a-linux-androideabi|arm-linux-androideabi|-march=armv7-a,-mthumb \
@@ -117,6 +119,7 @@ ANDROID_APK_CONTENTS_DIR := $(ANDROID_BUILD_DIR)/apk_contents
 # Here `-DANDROID_STL=c++_shared` is optional. If you omit it, then when compiling manually, add `-static-libstdc++` to linker flags (sic, even for libc++ for some reason).
 #   You can confirm this by compiling the test project above without setting `ANDROID_STL` and looking at the flags.
 # Also if you do this, don't copy `libc++_shared.so` to the output directory below.
+# Interestingly, the original article uses lowercase `-fpic` instead of `-fPIC` (on Arm only), but CMake always uses uppercase `-fPIC`, so we always use the uppercase one too.
 override define codesnippet_android_build_native =
 $(ANDROID_BUILD_DIR)/markers/native-$1.txt:
 	$(MAKE) build-all \
